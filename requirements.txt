@@ -71,7 +71,7 @@ hypothesis==6.92.1
 python-dotenv==1.0.0
 python-multipart==0.0.6
 aiofiles==23.2.1
-orjson==3.9.10
+orjson==3.11.5
 tenacity==8.2.3
 click==8.1.7
 rich==13.7.0
