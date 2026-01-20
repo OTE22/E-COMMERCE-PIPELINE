@@ -24,7 +24,7 @@ confluent-kafka==2.3.0
 aiokafka==0.10.0
 
 # Workflow Orchestration
-prefect==2.14.15
+prefect==3.6.12
 
 # Data Processing
 pandas==2.1.4
