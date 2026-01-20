@@ -1,0 +1,293 @@
+# =============================================================================
+# Real-Time E-Commerce Analytics Platform
+# Docker Compose - Production Services
+# =============================================================================
+
+version: '3.9'
+
+x-common-env: &common-env
+  TZ: UTC
+
+services:
+  # ===========================================================================
+  # DATABASE LAYER
+  # ===========================================================================
+  
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-ecommerce}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ecommerce} -d ${POSTGRES_DB:-ecommerce_analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-network
+
+  # ===========================================================================
+  # STREAMING LAYER - KAFKA
+  # ===========================================================================
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    container_name: ecommerce-zookeeper
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: echo srvr | nc localhost 2181 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: ecommerce-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+      - "29092:29092"
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ecommerce-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecommerce-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ecommerce-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8080:8080"
+    networks:
+      - ecommerce-network
+
+  # ===========================================================================
+  # ORCHESTRATION LAYER - PREFECT
+  # ===========================================================================
+  
+  prefect-server:
+    image: prefecthq/prefect:2-python3.11
+    container_name: ecommerce-prefect
+    restart: unless-stopped
+    command: prefect server start
+    environment:
+      <<: *common-env
+      PREFECT_UI_URL: http://localhost:4200/api
+      PREFECT_API_URL: http://localhost:4200/api
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_SERVER_API_PORT: 4200
+    volumes:
+      - prefect_data:/root/.prefect
+    ports:
+      - "${PREFECT_PORT:-4200}:4200"
+    networks:
+      - ecommerce-network
+
+  # ===========================================================================
+  # ANALYTICS LAYER - SUPERSET
+  # ===========================================================================
+  
+  superset:
+    image: apache/superset:3.1.0
+    container_name: ecommerce-superset
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-superset-secret-key}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-ecommerce}:${POSTGRES_PASSWORD:-secure_password}@postgres:5432/${POSTGRES_DB:-ecommerce_analytics}
+      REDIS_URL: redis://redis:6379/0
+      SUPERSET_LOAD_EXAMPLES: "no"
+    volumes:
+      - superset_data:/app/superset_home
+      - ./infrastructure/docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+    ports:
+      - "${SUPERSET_PORT:-8088}:8088"
+    command: >
+      bash -c "
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin || true &&
+        superset db upgrade &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088 --with-threads --reload
+      "
+    networks:
+      - ecommerce-network
+
+  # ===========================================================================
+  # MONITORING LAYER
+  # ===========================================================================
+  
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: ecommerce-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - ecommerce-network
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: ecommerce-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      <<: *common-env
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - ecommerce-network
+
+  # ===========================================================================
+  # APPLICATION LAYER
+  # ===========================================================================
+  
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: ecommerce-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-ecommerce}:${POSTGRES_PASSWORD:-secure_password}@postgres:5432/${POSTGRES_DB:-ecommerce_analytics}
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    volumes:
+      - ./src:/app/src:ro
+      - ./data:/app/data
+    ports:
+      - "${API_PORT:-8000}:8000"
+    networks:
+      - ecommerce-network
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+
+networks:
+  ecommerce-network:
+    driver: bridge
+    name: ecommerce-network
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+
+volumes:
+  postgres_data:
+    name: ecommerce-postgres-data
+  redis_data:
+    name: ecommerce-redis-data
+  zookeeper_data:
+    name: ecommerce-zookeeper-data
+  zookeeper_logs:
+    name: ecommerce-zookeeper-logs
+  kafka_data:
+    name: ecommerce-kafka-data
+  prefect_data:
+    name: ecommerce-prefect-data
+  superset_data:
+    name: ecommerce-superset-data
+  prometheus_data:
+    name: ecommerce-prometheus-data
+  grafana_data:
+    name: ecommerce-grafana-data

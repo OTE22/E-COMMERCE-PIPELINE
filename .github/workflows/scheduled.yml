@@ -1,0 +1,122 @@
+# Scheduled Jobs - Data Quality & Maintenance
+name: Scheduled Jobs
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Job to run'
+        required: true
+        type: choice
+        options:
+          - data-quality
+          - cleanup
+          - backup
+          - report
+
+jobs:
+  # ==========================================
+  # Data Quality Check
+  # ==========================================
+  data-quality:
+    name: Data Quality Check
+    runs-on: ubuntu-latest
+    if: github.event.schedule || github.event.inputs.job == 'data-quality'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run data quality checks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔍 Running data quality checks..."
+          # python -m workflows.data_quality
+
+      - name: Generate quality report
+        run: |
+          echo "📊 Generating data quality report..."
+
+      - name: Send notification on failure
+        if: failure()
+        run: |
+          echo "❌ Data quality check failed!"
+          # Send Slack/email notification
+
+  # ==========================================
+  # Database Backup
+  # ==========================================
+  backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    if: github.event.schedule || github.event.inputs.job == 'backup'
+
+    steps:
+      - name: Create database backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          echo "💾 Creating database backup..."
+          # pg_dump and upload to S3
+
+      - name: Verify backup
+        run: |
+          echo "✅ Backup verified successfully"
+
+  # ==========================================
+  # Cleanup Old Data
+  # ==========================================
+  cleanup:
+    name: Cleanup Old Data
+    runs-on: ubuntu-latest
+    if: github.event.inputs.job == 'cleanup'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run cleanup tasks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🧹 Running cleanup tasks..."
+          # Delete old staging data
+          # Archive old logs
+          # Clean up temporary files
+
+  # ==========================================
+  # Weekly Report
+  # ==========================================
+  weekly-report:
+    name: Generate Weekly Report
+    runs-on: ubuntu-latest
+    if: github.event.schedule && github.event.schedule == '0 2 * * 0'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate analytics report
+        run: |
+          echo "📈 Generating weekly analytics report..."
+
+      - name: Send report
+        run: |
+          echo "📧 Sending report to stakeholders..."

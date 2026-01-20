@@ -1,0 +1,27 @@
+[Unit]
+Description=E-Commerce Analytics API
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ecommerce-analytics
+ExecStartPre=/usr/bin/docker-compose pull
+ExecStart=/usr/bin/docker-compose up
+ExecStop=/usr/bin/docker-compose down
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ecommerce-analytics
+
+# Environment
+Environment="COMPOSE_PROJECT_NAME=ecommerce"
+
+[Install]
+WantedBy=multi-user.target

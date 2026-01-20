@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Analytics Dashboard</title>
+    <meta name="description" content="Real-time e-commerce analytics dashboard with sales metrics, customer insights, and product performance">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">📊</span>
+                    <span class="logo-text">Analytics</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="orders">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">Orders</span>
+                </a>
+                <a href="#" class="nav-item" data-page="customers">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Customers</span>
+                </a>
+                <a href="#" class="nav-item" data-page="products">
+                    <span class="nav-icon">🛍️</span>
+                    <span class="nav-text">Products</span>
+                </a>
+                <a href="#" class="nav-item" data-page="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Analytics</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">API Connected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h1 class="page-title">Dashboard</h1>
+                    <span class="page-subtitle">Real-time analytics overview</span>
+                </div>
+                <div class="header-right">
+                    <div class="date-range-picker">
+                        <select id="dateRange" class="select-input">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="refreshBtn">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content" id="dashboardPage">
+                <!-- KPI Cards -->
+                <section class="kpi-section">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue">💰</div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Revenue</span>
+                            <span class="kpi-value" id="totalRevenue">$0</span>
+                            <span class="kpi-change positive" id="revenueChange">+0%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon orders">📦</div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Orders</span>
+                            <span class="kpi-value" id="totalOrders">0</span>
+                            <span class="kpi-change positive" id="ordersChange">+0%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon customers">👥</div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Active Customers</span>
+                            <span class="kpi-value" id="totalCustomers">0</span>
+                            <span class="kpi-change positive" id="customersChange">+0%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon aov">🛒</div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Avg Order Value</span>
+                            <span class="kpi-value" id="avgOrderValue">$0</span>
+                            <span class="kpi-change" id="aovChange">0%</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Row 1 -->
+                <section class="charts-section">
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h3>Revenue Trend</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn active" data-view="daily">Daily</button>
+                                <button class="chart-btn" data-view="weekly">Weekly</button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="revenueTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Sales by Category</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Row 2 -->
+                <section class="charts-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Orders by Hour</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Customer Segments</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="segmentChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tables Section -->
+                <section class="tables-section">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Top Products</h3>
+                            <a href="#" class="view-all">View All →</a>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Units Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTable">
+                                <tr>
+                                    <td colspan="4" class="loading">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Recent Orders</h3>
+                            <a href="#" class="view-all">View All →</a>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                                <tr>
+                                    <td colspan="4" class="loading">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Orders Page -->
+            <div class="page-content hidden" id="ordersPage">
+                <div class="page-header">
+                    <h2>Orders Management</h2>
+                    <div class="filters">
+                        <select class="select-input" id="orderStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <input type="text" class="search-input" placeholder="Search orders..." id="orderSearch">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table full-width">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <tr><td colspan="7" class="loading">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="ordersPagination"></div>
+            </div>
+
+            <!-- Customers Page -->
+            <div class="page-content hidden" id="customersPage">
+                <div class="page-header">
+                    <h2>Customer Analytics</h2>
+                </div>
+                <div class="customer-metrics">
+                    <div class="metric-card">
+                        <span class="metric-value" id="vipCount">0</span>
+                        <span class="metric-label">VIP Customers</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-value" id="atRiskCount">0</span>
+                        <span class="metric-label">At Risk</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-value" id="avgLtv">$0</span>
+                        <span class="metric-label">Avg. Lifetime Value</span>
+                    </div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3>Customer Cohorts</h3>
+                        <canvas id="cohortChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>LTV Distribution</h3>
+                        <canvas id="ltvChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Page -->
+            <div class="page-content hidden" id="productsPage">
+                <div class="page-header">
+                    <h2>Product Performance</h2>
+                    <div class="filters">
+                        <select class="select-input" id="categoryFilter">
+                            <option value="">All Categories</option>
+                        </select>
+                        <input type="text" class="search-input" placeholder="Search products..." id="productSearch">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table full-width">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Rating</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr><td colspan="7" class="loading">Loading products...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div class="page-content hidden" id="analyticsPage">
+                <div class="page-header">
+                    <h2>Advanced Analytics</h2>
+                </div>
+                <div class="analytics-grid">
+                    <div class="chart-card full-width">
+                        <h3>Revenue vs Orders Trend</h3>
+                        <canvas id="dualAxisChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Day of Week Performance</h3>
+                        <canvas id="dowChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Payment Methods</h3>
+                        <canvas id="paymentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
