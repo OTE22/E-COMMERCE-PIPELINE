@@ -1,5 +1,8 @@
 # 🛒 E-Commerce Analytics Platform
 
+[![GitHub](https://img.shields.io/badge/GitHub-OTE22%2FE--COMMERCE--PIPELINE-blue?logo=github)](https://github.com/OTE22/E-COMMERCE-PIPELINE)
+[![Author](https://img.shields.io/badge/Author-Ali%20Abbass-purple)](https://github.com/OTE22)
+
 A **production-grade, real-time analytics platform** for e-commerce businesses. Built with FastAPI, PostgreSQL, Redis, Kafka, and modern data engineering practices.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
@@ -28,7 +31,7 @@ A **production-grade, real-time analytics platform** for e-commerce businesses. 
 > 
 > ### Quick Deploy to AWS EC2:
 > ```bash
-> sudo git clone <your-repo> /opt/ecommerce-analytics
+> sudo git clone https://github.com/OTE22/E-COMMERCE-PIPELINE.git /opt/ecommerce-analytics
 > cd /opt/ecommerce-analytics
 > sudo chmod +x scripts/deploy.sh
 > sudo ./scripts/deploy.sh --first-time
