@@ -9,12 +9,14 @@ from typing import Dict, Any
 
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
+import structlog
 
 from src.config import get_settings
 from src.database.connection import check_database_health
 
 settings = get_settings()
 router = APIRouter()
+logger = structlog.get_logger(__name__)
 
 
 class HealthResponse(BaseModel):
@@ -36,6 +38,7 @@ async def health_check() -> HealthResponse:
     - Database connectivity
     - Redis connectivity
     """
+    logger.debug("Running comprehensive health check")
     checks = {}
     overall_status = "healthy"
     
@@ -45,9 +48,11 @@ async def health_check() -> HealthResponse:
         checks["database"] = db_health
         if db_health.get("status") != "healthy":
             overall_status = "degraded"
+            logger.warning("Database health check failed", details=db_health)
     except Exception as e:
         checks["database"] = {"status": "unhealthy", "error": str(e)}
         overall_status = "unhealthy"
+        logger.error("Database check raised exception", error=str(e))
     
     # Check Redis
     try:
@@ -59,6 +64,9 @@ async def health_check() -> HealthResponse:
         checks["redis"] = {"status": "unhealthy", "error": str(e)}
         if overall_status == "healthy":
             overall_status = "degraded"
+        logger.error("Redis check raised exception", error=str(e))
+    
+    logger.info("Health check completed", status=overall_status)
     
     return HealthResponse(
         status=overall_status,
@@ -92,9 +100,11 @@ async def readiness_check(response: Response) -> Dict[str, str]:
         
         if db_health.get("status") != "healthy":
             response.status_code = 503
+            logger.warning("Readiness check failed: Database unavailable")
             return {"status": "not_ready", "reason": "database_unavailable"}
         
         return {"status": "ready"}
     except Exception as e:
         response.status_code = 503
+        logger.error("Readiness check failed with exception", error=str(e))
         return {"status": "not_ready", "reason": str(e)}

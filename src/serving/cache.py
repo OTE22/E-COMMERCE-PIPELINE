@@ -34,7 +34,7 @@ async def init_redis() -> Redis:
         return _redis_client
     
     _redis_pool = ConnectionPool.from_url(
-        settings.redis.url,
+        settings.redis.get_url(),
         max_connections=settings.redis.max_connections,
         socket_timeout=settings.redis.socket_timeout,
         decode_responses=settings.redis.decode_responses,

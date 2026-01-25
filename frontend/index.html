@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Commerce Analytics Dashboard</title>
-    <meta name="description" content="Real-time e-commerce analytics dashboard with sales metrics, customer insights, and product performance">
+    <meta name="description"
+        content="Real-time e-commerce analytics dashboard with sales metrics, customer insights, and product performance">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -21,30 +24,30 @@
                     <span class="logo-text">Analytics</span>
                 </div>
             </div>
-            
+
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
+                <a href="/" class="nav-item active" data-page="dashboard">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a href="#" class="nav-item" data-page="orders">
+                <a href="/orders" class="nav-item" data-page="orders">
                     <span class="nav-icon">📦</span>
                     <span class="nav-text">Orders</span>
                 </a>
-                <a href="#" class="nav-item" data-page="customers">
+                <a href="/customers" class="nav-item" data-page="customers">
                     <span class="nav-icon">👥</span>
                     <span class="nav-text">Customers</span>
                 </a>
-                <a href="#" class="nav-item" data-page="products">
+                <a href="/products" class="nav-item" data-page="products">
                     <span class="nav-icon">🛍️</span>
                     <span class="nav-text">Products</span>
                 </a>
-                <a href="#" class="nav-item" data-page="analytics">
+                <a href="/analytics" class="nav-item" data-page="analytics">
                     <span class="nav-icon">📈</span>
                     <span class="nav-text">Analytics</span>
                 </a>
             </nav>
-            
+
             <div class="sidebar-footer">
                 <div class="status-indicator">
                     <span class="status-dot online"></span>
@@ -235,7 +238,9 @@
                             </tr>
                         </thead>
                         <tbody id="ordersTableBody">
-                            <tr><td colspan="7" class="loading">Loading orders...</td></tr>
+                            <tr>
+                                <td colspan="7" class="loading">Loading orders...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -298,7 +303,9 @@
                             </tr>
                         </thead>
                         <tbody id="productsTableBody">
-                            <tr><td colspan="7" class="loading">Loading products...</td></tr>
+                            <tr>
+                                <td colspan="7" class="loading">Loading products...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -334,4 +341,5 @@
     <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

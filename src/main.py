@@ -37,6 +37,10 @@ logger = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
+    # Configure logging first
+    from src.config.logging import configure_logging
+    configure_logging("DEBUG")  # Set to DEBUG for visibility
+    
     logger.info("Starting E-Commerce Analytics API")
     
     # Initialize services
@@ -105,11 +109,31 @@ except ImportError:
 # Serve frontend static files
 frontend_path = Path(__file__).parent.parent / "frontend"
 if frontend_path.exists():
+    # Mount CSS and JS directories
+    css_path = frontend_path / "css"
+    js_path = frontend_path / "js"
+    
+    if css_path.exists():
+        app.mount("/css", StaticFiles(directory=css_path), name="css")
+    if js_path.exists():
+        app.mount("/js", StaticFiles(directory=js_path), name="js")
+    
+    # Also mount entire frontend as static
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")
     
     @app.get("/")
     async def serve_frontend():
         """Serve the frontend dashboard."""
+        return FileResponse(frontend_path / "index.html")
+
+    # SPA Catch-all using starlette path convertor
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve index.html for SPA routing."""
+        # Don't catch API calls
+        if full_path.startswith("api") or full_path.startswith("static"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404)
         return FileResponse(frontend_path / "index.html")
 
 

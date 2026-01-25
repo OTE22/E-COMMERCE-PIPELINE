@@ -50,21 +50,11 @@ async def init_database() -> AsyncEngine:
         "pool_pre_ping": True,  # Verify connections before use
     }
     
-    # Use connection pooling in production, NullPool for testing
-    if settings.is_production:
-        engine_config.update({
-            "poolclass": QueuePool,
-            "pool_size": settings.database.pool_size,
-            "max_overflow": settings.database.max_overflow,
-            "pool_timeout": settings.database.pool_timeout,
-            "pool_recycle": 3600,  # Recycle connections after 1 hour
-        })
-    else:
-        engine_config.update({
-            "poolclass": NullPool if settings.app_env == "testing" else QueuePool,
-            "pool_size": 5,
-            "max_overflow": 5,
-        })
+    # Use NullPool for async engines (QueuePool doesn't work with asyncio)
+    # AsyncPG handles its own connection pooling internally
+    engine_config.update({
+        "poolclass": NullPool,
+    })
     
     _engine = create_async_engine(
         settings.database.async_url,
@@ -140,17 +130,22 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             result = await db.execute(query)
     """
     if _async_session_factory is None:
+        logger.error("Database not initialized when get_db() called")
         raise RuntimeError("Database not initialized. Call init_database() first.")
     
+    logger.debug("Creating new database session")
     session = _async_session_factory()
     try:
         yield session
         await session.commit()
-    except Exception:
+        logger.debug("Database session committed successfully")
+    except Exception as e:
+        logger.error("Database session error, rolling back", error=str(e), error_type=type(e).__name__)
         await session.rollback()
         raise
     finally:
         await session.close()
+        logger.debug("Database session closed")
 
 
 async def get_db_dependency() -> AsyncGenerator[AsyncSession, None]:

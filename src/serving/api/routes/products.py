@@ -11,12 +11,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+import structlog
 
 from src.database.connection import get_db_dependency
 from src.database.models import DimProduct, ProductCategory
 from src.serving.cache import products_cache
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
+
+logger.info("Products router initialized")
 
 
 class ProductSummary(BaseModel):
@@ -77,43 +81,60 @@ async def list_products(
     """
     List products with filtering and search.
     """
-    query = select(DimProduct)
-    count_query = select(func.count(DimProduct.product_id))
-    
-    conditions = [DimProduct.is_active == True]
-    
-    if category:
-        conditions.append(DimProduct.category == category)
-    if brand:
-        conditions.append(DimProduct.brand == brand)
-    if in_stock_only:
-        conditions.append(DimProduct.is_in_stock == True)
-    if min_price:
-        conditions.append(DimProduct.unit_price >= min_price)
-    if max_price:
-        conditions.append(DimProduct.unit_price <= max_price)
-    if search:
-        conditions.append(DimProduct.name.ilike(f"%{search}%"))
-    
-    query = query.where(and_(*conditions))
-    count_query = count_query.where(and_(*conditions))
-    
-    # Get total
-    total = (await db.execute(count_query)).scalar() or 0
-    
-    # Paginate
-    offset = (page - 1) * page_size
-    query = query.order_by(DimProduct.name).offset(offset).limit(page_size)
-    
-    result = await db.execute(query)
-    products = result.scalars().all()
-    
-    return ProductListResponse(
-        items=[ProductSummary.model_validate(p) for p in products],
-        total=total,
+    logger.info(
+        "list_products called",
         page=page,
         page_size=page_size,
+        category=category,
+        brand=brand,
+        in_stock_only=in_stock_only,
+        search=search,
     )
+    
+    try:
+        query = select(DimProduct)
+        count_query = select(func.count(DimProduct.product_id))
+        
+        conditions = [DimProduct.is_active == True]
+        
+        if category:
+            conditions.append(DimProduct.category == category)
+        if brand:
+            conditions.append(DimProduct.brand == brand)
+        if in_stock_only:
+            conditions.append(DimProduct.is_in_stock == True)
+        if min_price:
+            conditions.append(DimProduct.unit_price >= min_price)
+        if max_price:
+            conditions.append(DimProduct.unit_price <= max_price)
+        if search:
+            conditions.append(DimProduct.name.ilike(f"%{search}%"))
+        
+        query = query.where(and_(*conditions))
+        count_query = count_query.where(and_(*conditions))
+        
+        # Get total
+        total = (await db.execute(count_query)).scalar() or 0
+        logger.debug("Products count query completed", total=total)
+        
+        # Paginate
+        offset = (page - 1) * page_size
+        query = query.order_by(DimProduct.name).offset(offset).limit(page_size)
+        
+        result = await db.execute(query)
+        products = result.scalars().all()
+        
+        logger.info("Products retrieved successfully", count=len(products), total=total)
+        
+        return ProductListResponse(
+            items=[ProductSummary.model_validate(p) for p in products],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    except Exception as e:
+        logger.error("Error in list_products", error=str(e), error_type=type(e).__name__)
+        raise
 
 
 @router.get("/metrics", response_model=ProductMetrics)

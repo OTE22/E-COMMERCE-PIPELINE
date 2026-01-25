@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func, and_, text
 from sqlalchemy.ext.asyncio import AsyncSession
+import structlog
 
 from src.database.connection import get_db_dependency
 from src.database.models import (
@@ -23,6 +24,9 @@ from src.database.models import (
 from src.serving.cache import analytics_cache
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
+
+logger.info("Analytics router initialized")
 
 
 class SalesOverview(BaseModel):
@@ -78,18 +82,24 @@ async def get_sales_overview(
     """
     Get sales overview with optional comparison to previous period.
     """
+    logger.info("get_sales_overview called", start_date=str(start_date), end_date=str(end_date))
+    
     # Default to last 30 days
     if not end_date:
         end_date = date.today()
     if not start_date:
         start_date = end_date - timedelta(days=30)
     
+    logger.debug("Date range calculated", start_date=str(start_date), end_date=str(end_date))
+    
     cache_key = f"overview:{start_date}:{end_date}"
     cached = await analytics_cache.get(cache_key)
     if cached:
+        logger.debug("Returning cached overview")
         return SalesOverview(**cached)
     
     # Current period metrics
+    logger.debug("Querying database for sales overview")
     result = await db.execute(
         select(
             func.sum(FactOrder.total_amount).label("revenue"),
@@ -104,6 +114,13 @@ async def get_sales_overview(
         )
     )
     current = result.one()
+    
+    logger.info(
+        "Sales overview query completed",
+        revenue=float(current.revenue or 0),
+        orders=current.orders or 0,
+        customers=current.customers or 0,
+    )
     
     overview = SalesOverview(
         total_revenue=float(current.revenue or 0),
@@ -138,8 +155,11 @@ async def get_sales_overview(
             overview.revenue_growth = ((current.revenue - prev.revenue) / prev.revenue) * 100
         if prev.orders and prev.orders > 0:
             overview.orders_growth = ((current.orders - prev.orders) / prev.orders) * 100
+        
+        logger.debug("Growth calculated", revenue_growth=overview.revenue_growth, orders_growth=overview.orders_growth)
     
     await analytics_cache.set(cache_key, overview.model_dump())
+    logger.info("Sales overview returned successfully")
     return overview
 
 
@@ -153,46 +173,55 @@ async def get_sales_trend(
     """
     Get sales trend over time.
     """
-    if not end_date:
-        end_date = date.today()
-    if not start_date:
-        start_date = end_date - timedelta(days=30)
+    logger.info("get_sales_trend called", start_date=str(start_date), end_date=str(end_date), granularity=granularity)
     
-    # Query daily aggregates
-    result = await db.execute(
-        select(
-            func.date(FactOrder.order_timestamp).label("date"),
-            func.sum(FactOrder.total_amount).label("revenue"),
-            func.count(FactOrder.order_id).label("orders"),
-            func.count(func.distinct(FactOrder.customer_id)).label("customers"),
-        )
-        .where(
-            and_(
-                FactOrder.order_timestamp >= datetime.combine(start_date, datetime.min.time()),
-                FactOrder.order_timestamp <= datetime.combine(end_date, datetime.max.time()),
+    try:
+        if not end_date:
+            end_date = date.today()
+        if not start_date:
+            start_date = end_date - timedelta(days=30)
+        
+        logger.debug("Querying sales trend data")
+        # Query daily aggregates
+        result = await db.execute(
+            select(
+                func.date(FactOrder.order_timestamp).label("date"),
+                func.sum(FactOrder.total_amount).label("revenue"),
+                func.count(FactOrder.order_id).label("orders"),
+                func.count(func.distinct(FactOrder.customer_id)).label("customers"),
             )
+            .where(
+                and_(
+                    FactOrder.order_timestamp >= datetime.combine(start_date, datetime.min.time()),
+                    FactOrder.order_timestamp <= datetime.combine(end_date, datetime.max.time()),
+                )
+            )
+            .group_by(func.date(FactOrder.order_timestamp))
+            .order_by(func.date(FactOrder.order_timestamp))
         )
-        .group_by(func.date(FactOrder.order_timestamp))
-        .order_by(func.date(FactOrder.order_timestamp))
-    )
-    
-    data = [
-        DailySalesData(
-            date=row.date,
-            revenue=float(row.revenue or 0),
-            orders=row.orders,
-            customers=row.customers,
+        
+        data = [
+            DailySalesData(
+                date=row.date,
+                revenue=float(row.revenue or 0),
+                orders=row.orders,
+                customers=row.customers,
+            )
+            for row in result.all()
+        ]
+        
+        logger.info("Sales trend query completed", data_points=len(data))
+        
+        return SalesTrend(
+            data=data,
+            period_start=start_date,
+            period_end=end_date,
+            total_revenue=sum(d.revenue for d in data),
+            total_orders=sum(d.orders for d in data),
         )
-        for row in result.all()
-    ]
-    
-    return SalesTrend(
-        data=data,
-        period_start=start_date,
-        period_end=end_date,
-        total_revenue=sum(d.revenue for d in data),
-        total_orders=sum(d.orders for d in data),
-    )
+    except Exception as e:
+        logger.error("Error in get_sales_trend", error=str(e), error_type=type(e).__name__)
+        raise
 
 
 @router.get("/sales/by-category", response_model=List[CategorySales])

@@ -537,6 +537,38 @@ sudo docker-compose -f docker-compose.prod.yml up -d
 | **Storage** | S3 (for data lake) |
 | **Monitoring** | CloudWatch |
 
+### Infrastructure as Code (Terraform)
+We provide a comprehensive Terraform module suite to deploy a production-ready AWS environment.
+
+**Prerequisites:**
+- Terraform installed
+- A configured AWS profile with Administrator permissions
+
+**Deploying to AWS:**
+```bash
+cd infrastructure/terraform
+
+# 1. Initialize Terraform
+terraform init
+
+# 2. Review Execution Plan
+terraform plan -out=tfplan \
+  -var="project_name=ecommerce-analytics" \
+  -var="environment=prod" \
+  -var="db_password=YOUR_SECURE_DB_PASSWORD"
+
+# 3. Apply Infrastructure
+terraform apply tfplan
+```
+
+**What gets deployed:**
+- **VPC**: 2 Public & 2 Private Subnets across 2 AZs
+- **Security Groups**: Least-privilege access rules
+- **RDS**: Managed PostgreSQL Database
+- **ElastiCache**: Managed Redis Cluster
+- **ECS Fargate**: Serverless container orchestration
+- **ALB**: Application Load Balancer
+
 ### Docker Deployment
 ```bash
 # Development

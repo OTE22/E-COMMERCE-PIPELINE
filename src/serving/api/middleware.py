@@ -38,7 +38,19 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         )
         
         # Process request
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            # Log exception with traceback
+            logger.error(
+                "Request failed with exception",
+                request_id=request_id,
+                error=str(e),
+                error_type=type(e).__name__,
+                exc_info=True,
+                duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+            )
+            raise e
         
         # Calculate duration
         duration_ms = (time.perf_counter() - start_time) * 1000
@@ -134,7 +146,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self' https://cdn.jsdelivr.net"
+        )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
         return response

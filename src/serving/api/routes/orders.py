@@ -13,12 +13,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+import structlog
 
 from src.database.connection import get_db_dependency
 from src.database.models import FactOrder, FactOrderItem, DimCustomer, OrderStatus
 from src.serving.cache import orders_cache
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
+
+logger.info("Orders router initialized")
 
 
 # =============================================================================
@@ -100,6 +104,16 @@ async def list_orders(
     - Date range
     - Customer
     """
+    logger.info(
+        "list_orders called",
+        page=page,
+        page_size=page_size,
+        status=status,
+        start_date=str(start_date) if start_date else None,
+        end_date=str(end_date) if end_date else None,
+        customer_id=str(customer_id) if customer_id else None,
+    )
+    
     # Build query
     query = select(FactOrder)
     count_query = select(func.count(FactOrder.order_id))
@@ -107,6 +121,7 @@ async def list_orders(
     # Apply filters
     conditions = []
     if status:
+        logger.debug("Applying status filter", status=status)
         conditions.append(FactOrder.status == status)
     if start_date:
         conditions.append(FactOrder.order_timestamp >= datetime.combine(start_date, datetime.min.time()))
@@ -123,6 +138,8 @@ async def list_orders(
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
     
+    logger.debug("Total orders matching filters", total=total)
+    
     # Apply pagination
     offset = (page - 1) * page_size
     query = query.order_by(FactOrder.order_timestamp.desc()).offset(offset).limit(page_size)
@@ -130,6 +147,8 @@ async def list_orders(
     # Execute query
     result = await db.execute(query)
     orders = result.scalars().all()
+    
+    logger.info("Orders retrieved successfully", count=len(orders), total=total)
     
     return OrderListResponse(
         items=[OrderSummary.model_validate(o) for o in orders],

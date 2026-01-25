@@ -11,12 +11,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+import structlog
 
 from src.database.connection import get_db_dependency
 from src.database.models import DimCustomer, CustomerSegment
 from src.serving.cache import customers_cache
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
+
+logger.info("Customers router initialized")
 
 
 class CustomerSummary(BaseModel):
@@ -71,35 +75,51 @@ async def list_customers(
     db: AsyncSession = Depends(get_db_dependency),
 ) -> CustomerListResponse:
     """List customers with filtering."""
-    query = select(DimCustomer).where(DimCustomer.is_current == True)
-    count_query = select(func.count(DimCustomer.customer_id)).where(DimCustomer.is_current == True)
-    
-    conditions = []
-    if segment:
-        conditions.append(DimCustomer.segment == segment)
-    if country:
-        conditions.append(DimCustomer.country == country)
-    if min_ltv:
-        conditions.append(DimCustomer.lifetime_value >= min_ltv)
-    
-    if conditions:
-        query = query.where(and_(*conditions))
-        count_query = count_query.where(and_(*conditions))
-    
-    total = (await db.execute(count_query)).scalar() or 0
-    
-    offset = (page - 1) * page_size
-    query = query.order_by(DimCustomer.lifetime_value.desc()).offset(offset).limit(page_size)
-    
-    result = await db.execute(query)
-    customers = result.scalars().all()
-    
-    return CustomerListResponse(
-        items=[CustomerSummary.model_validate(c) for c in customers],
-        total=total,
+    logger.info(
+        "list_customers called",
         page=page,
         page_size=page_size,
+        segment=segment,
+        country=country,
+        min_ltv=min_ltv,
     )
+    
+    try:
+        query = select(DimCustomer).where(DimCustomer.is_current == True)
+        count_query = select(func.count(DimCustomer.customer_id)).where(DimCustomer.is_current == True)
+        
+        conditions = []
+        if segment:
+            conditions.append(DimCustomer.segment == segment)
+        if country:
+            conditions.append(DimCustomer.country == country)
+        if min_ltv:
+            conditions.append(DimCustomer.lifetime_value >= min_ltv)
+        
+        if conditions:
+            query = query.where(and_(*conditions))
+            count_query = count_query.where(and_(*conditions))
+        
+        total = (await db.execute(count_query)).scalar() or 0
+        logger.debug("Customers count query completed", total=total)
+        
+        offset = (page - 1) * page_size
+        query = query.order_by(DimCustomer.lifetime_value.desc()).offset(offset).limit(page_size)
+        
+        result = await db.execute(query)
+        customers = result.scalars().all()
+        
+        logger.info("Customers retrieved successfully", count=len(customers), total=total)
+        
+        return CustomerListResponse(
+            items=[CustomerSummary.model_validate(c) for c in customers],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    except Exception as e:
+        logger.error("Error in list_customers", error=str(e), error_type=type(e).__name__)
+        raise
 
 
 @router.get("/metrics", response_model=CustomerMetrics)

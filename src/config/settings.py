@@ -50,10 +50,12 @@ class RedisSettings(BaseSettings):
     max_connections: int = Field(default=100, description="Max connections")
     socket_timeout: int = Field(default=5, description="Socket timeout in seconds")
     decode_responses: bool = Field(default=True, description="Decode responses to strings")
+    url: Optional[str] = Field(default=None, alias="REDIS_URL", description="Redis URL (overrides host/port)")
     
-    @property
-    def url(self) -> str:
-        """Redis connection URL"""
+    def get_url(self) -> str:
+        """Redis connection URL - uses REDIS_URL if set, otherwise builds from host/port"""
+        if self.url:
+            return self.url
         if self.password:
             return f"redis://:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.db}"
         return f"redis://{self.host}:{self.port}/{self.db}"

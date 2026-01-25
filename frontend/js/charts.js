@@ -110,4 +110,100 @@ window.createRevenueTrendChart = createRevenueTrendChart;
 window.createCategoryChart = createCategoryChart;
 window.createHourlyChart = createHourlyChart;
 window.createSegmentChart = createSegmentChart;
+
+function createDualAxisChart(canvasId, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (charts[canvasId]) charts[canvasId].destroy();
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: data.map(d => d.revenue),
+                    type: 'line',
+                    borderColor: chartColors.primary,
+                    borderWidth: 3,
+                    yAxisID: 'y',
+                    tension: 0.4
+                },
+                {
+                    label: 'Orders',
+                    data: data.map(d => d.orders),
+                    backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    return charts[canvasId];
+}
+
+function createDoWChart(canvasId, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (charts[canvasId]) charts[canvasId].destroy();
+
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Avg Orders',
+                data: data,
+                backgroundColor: chartColors.info,
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    return charts[canvasId];
+}
+
+function createPaymentChart(canvasId, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (charts[canvasId]) charts[canvasId].destroy();
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.map(d => d.method),
+            datasets: [{
+                data: data.map(d => d.percentage),
+                backgroundColor: chartColors.palette,
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+    });
+    return charts[canvasId];
+}
+
+window.createDualAxisChart = createDualAxisChart;
+window.createDoWChart = createDoWChart;
+window.createPaymentChart = createPaymentChart;
 window.formatCurrency = formatCurrency;
