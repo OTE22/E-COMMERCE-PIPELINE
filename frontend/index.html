@@ -251,29 +251,81 @@
             <div class="page-content hidden" id="customersPage">
                 <div class="page-header">
                     <h2>Customer Analytics</h2>
+                    <div class="filters">
+                        <select class="select-input" id="customerSegmentFilter">
+                            <option value="">All Segments</option>
+                            <option value="vip">VIP</option>
+                            <option value="returning">Returning</option>
+                            <option value="new">New</option>
+                            <option value="at_risk">At Risk</option>
+                            <option value="churned">Churned</option>
+                        </select>
+                        <input type="text" class="search-input" placeholder="Search customers..." id="customerSearch">
+                    </div>
                 </div>
+
+                <!-- Customer Metrics Row -->
                 <div class="customer-metrics">
-                    <div class="metric-card">
-                        <span class="metric-value" id="vipCount">0</span>
-                        <span class="metric-label">VIP Customers</span>
+                    <div class="metric-card glass-card">
+                        <div class="metric-icon">👑</div>
+                        <div class="metric-info">
+                            <span class="metric-value" id="vipCount">0</span>
+                            <span class="metric-label">VIP Customers</span>
+                        </div>
                     </div>
-                    <div class="metric-card">
-                        <span class="metric-value" id="atRiskCount">0</span>
-                        <span class="metric-label">At Risk</span>
+                    <div class="metric-card glass-card">
+                        <div class="metric-icon">⚠️</div>
+                        <div class="metric-info">
+                            <span class="metric-value" id="atRiskCount">0</span>
+                            <span class="metric-label">At Risk</span>
+                        </div>
                     </div>
-                    <div class="metric-card">
-                        <span class="metric-value" id="avgLtv">$0</span>
-                        <span class="metric-label">Avg. Lifetime Value</span>
+                    <div class="metric-card glass-card">
+                        <div class="metric-icon">💎</div>
+                        <div class="metric-info">
+                            <span class="metric-value" id="avgLtv">$0</span>
+                            <span class="metric-label">Avg. Lifetime Value</span>
+                        </div>
                     </div>
                 </div>
-                <div class="charts-row">
-                    <div class="chart-card">
-                        <h3>Customer Cohorts</h3>
-                        <canvas id="cohortChart"></canvas>
+
+                <!-- Customer List Table -->
+                <div class="table-container glass-card">
+                    <table class="data-table full-width" id="customersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Segment</th>
+                                <th>Total Orders</th>
+                                <th>Lifetime Value</th>
+                                <th>Last Order</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <tr>
+                                <td colspan="7" class="loading">Loading customers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="customersPagination">
+                        <!-- Pagination controls -->
                     </div>
-                    <div class="chart-card">
+                </div>
+
+                <div class="charts-row mt-4">
+                    <div class="chart-card glass-card">
+                        <h3>Customer Cohorts</h3>
+                        <div class="chart-body">
+                            <canvas id="cohortChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card glass-card">
                         <h3>LTV Distribution</h3>
-                        <canvas id="ltvChart"></canvas>
+                        <div class="chart-body">
+                            <canvas id="ltvChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -315,19 +367,35 @@
             <div class="page-content hidden" id="analyticsPage">
                 <div class="page-header">
                     <h2>Advanced Analytics</h2>
+                    <div class="header-right">
+                        <select id="analyticsTimeRange" class="select-input">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="analytics-grid">
-                    <div class="chart-card full-width">
-                        <h3>Revenue vs Orders Trend</h3>
-                        <canvas id="dualAxisChart"></canvas>
+                    <div class="chart-card full-width glass-card">
+                        <div class="chart-header">
+                            <h3>Revenue vs Orders Trend</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="dualAxisChart"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-card">
+                    <div class="chart-card glass-card">
                         <h3>Day of Week Performance</h3>
-                        <canvas id="dowChart"></canvas>
+                        <div class="chart-body">
+                            <canvas id="dowChart"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-card">
+                    <div class="chart-card glass-card">
                         <h3>Payment Methods</h3>
-                        <canvas id="paymentChart"></canvas>
+                        <div class="chart-body">
+                            <canvas id="paymentChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>

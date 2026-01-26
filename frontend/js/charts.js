@@ -206,4 +206,32 @@ function createPaymentChart(canvasId, data) {
 window.createDualAxisChart = createDualAxisChart;
 window.createDoWChart = createDoWChart;
 window.createPaymentChart = createPaymentChart;
+window.createPieChart = createPieChart;
 window.formatCurrency = formatCurrency;
+
+function createPieChart(canvasId, data, label) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (charts[canvasId]) charts[canvasId].destroy();
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                data: data.data,
+                backgroundColor: chartColors.palette,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' },
+                title: { display: !!label, text: label }
+            }
+        }
+    });
+    return charts[canvasId];
+}

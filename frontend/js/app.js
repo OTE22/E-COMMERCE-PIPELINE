@@ -238,21 +238,97 @@ class DashboardApp {
         }
     }
 
-    async loadCustomers() {
+    async loadCustomers(page = 1) {
+        const tbody = document.getElementById('customersTableBody');
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading customers...</td></tr>';
+
+        const segment = document.getElementById('customerSegmentFilter')?.value;
+        const search = document.getElementById('customerSearch')?.value;
+
         try {
+            const response = await api.getCustomers(page, 15, { segment, search }); // Fetch 15 per page
+
+            // Render Metrics (Mocked for now, or fetch from separate endpoint)
+            // Ideally backend provides summarized metrics
             const metrics = await api.getSegmentDistribution();
-            // Fallback for demo
-            const vip = metrics.find(s => s.segment === 'VIP')?.count || 120;
-            const risk = metrics.find(s => s.segment === 'At Risk')?.count || 45;
+            const vip = metrics.find(s => s.segment === 'VIP')?.count || 0;
+            const atRisk = metrics.find(s => s.segment === 'At Risk')?.count || 0;
 
-            document.getElementById('vipCount').textContent = vip;
-            document.getElementById('atRiskCount').textContent = risk;
-            document.getElementById('avgLtv').textContent = formatCurrency(450); // Mock
+            document.getElementById('vipCount').innerText = vip.toLocaleString();
+            document.getElementById('atRiskCount').innerText = atRisk.toLocaleString();
+            // document.getElementById('avgLtv').innerText = formatCurrency(450); // Keep mock or fetching real
 
-            createSegmentChart('cohortChart', metrics); // Reusing segment chart for cohorts for now
+            if (response.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">No customers found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = response.items.map(c => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 500">${c.first_name_masked || 'Unknown'} ${c.last_name_masked || ''}</div>
+                        <div style="font-size: 12px; color: var(--text-muted)">${c.customer_key}</div>
+                    </td>
+                    <td>${(c.email_hash || '').substring(0, 10)}...</td>
+                    <td><span class="status-badge ${(c.segment || 'new').toLowerCase().replace(' ', '_')}">${c.segment || 'New'}</span></td>
+                    <td>${c.total_orders}</td>
+                    <td>${formatCurrency(c.lifetime_value)}</td>
+                    <td>${c.last_order_date ? new Date(c.last_order_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="alert('View customer ${c.customer_id}')">View</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Render Pagination
+            this.renderPagination('customersPagination', response.page, response.pages, (p) => this.loadCustomers(p));
+
+            // Render Cohort Chart (re-use existing logic)
+            createSegmentChart('cohortChart', segmentData);
+
+            // Mock LTV Chart Data
+            const ltvData = {
+                labels: ['0-100', '100-500', '500-1000', '1000+'],
+                data: [40, 30, 20, 10] // percentages
+            };
+            createPieChart('ltvChart', ltvData, 'LTV Distribution');
+
         } catch (error) {
             console.error('Failed to load customers:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">Error loading customer data</td></tr>';
         }
+    }
+
+    renderPagination(elementId, currentPage, totalPages, onPageChange) {
+        const container = document.getElementById(elementId);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        // Prev Button
+        const prevBtn = document.createElement('button');
+        prevBtn.innerText = '←';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => onPageChange(currentPage - 1);
+        container.appendChild(prevBtn);
+
+        // Page Numbers (Simplified)
+        for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+            const btn = document.createElement('button');
+            btn.innerText = i;
+            if (i === currentPage) btn.classList.add('active');
+            btn.onclick = () => onPageChange(i);
+            container.appendChild(btn);
+        }
+
+        // Next Button
+        const nextBtn = document.createElement('button');
+        nextBtn.innerText = '→';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => onPageChange(currentPage + 1);
+        container.appendChild(nextBtn);
     }
 
     async loadProducts() {

@@ -326,10 +326,18 @@ The platform includes a modern analytics dashboard built with vanilla HTML/CSS/J
 
 ### Features
 - **KPI Cards**: Revenue, orders, customers, AOV with trends
-- **Charts**: Revenue trends, category breakdown, hourly distribution
-- **Tables**: Top products, recent orders, customer list
-- **Dark Theme**: Premium dark mode with glassmorphism effects
-- **Responsive**: Works on desktop, tablet, and mobile
+- **Analytics Dashboard**:
+  - Revenue vs Orders dual-axis trend chart
+  - Interactive charts layout (Ultra-Compact Mode)
+  - Real-time visualizations (Chart.js)
+- **Detailed Data Tables**:
+  - **Customers**: Segment analysis, LTV tracking, and search
+  - **Orders**: Status filtering and detailed views
+  - **Products**: Stock tracking and performance metrics
+- **Premium UI**:
+  - Glassmorphism design (translucent cards)
+  - Dark mode aesthetic
+  - Optimized for large screens and mobile devices
 
 ### Accessing the Dashboard
 Navigate to `http://localhost:8000` after starting the server.

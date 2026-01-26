@@ -10,31 +10,31 @@
     --bg-tertiary: #242832;
     --bg-card: #1e222d;
     --bg-hover: #2a2f3d;
-    
+
     --text-primary: #ffffff;
     --text-secondary: #a0aec0;
     --text-muted: #6b7280;
-    
+
     --accent-primary: #6366f1;
     --accent-secondary: #8b5cf6;
     --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    
+
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
     --info: #3b82f6;
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
     --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
-    
+
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
     --transition-slow: 0.4s ease;
-    
+
     /* Spacing */
     --sidebar-width: 260px;
     --header-height: 70px;
@@ -46,7 +46,9 @@
    Reset & Base Styles
    ============================================ */
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -179,8 +181,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .status-text {
@@ -331,10 +340,21 @@ body {
     font-size: 24px;
 }
 
-.kpi-icon.revenue { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-.kpi-icon.orders { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-.kpi-icon.customers { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
-.kpi-icon.aov { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.kpi-icon.revenue {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.kpi-icon.orders {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.kpi-icon.customers {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.kpi-icon.aov {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
 
 .kpi-content {
     display: flex;
@@ -359,8 +379,13 @@ body {
     margin-top: 4px;
 }
 
-.kpi-change.positive { color: var(--success); }
-.kpi-change.negative { color: var(--danger); }
+.kpi-change.positive {
+    color: var(--success);
+}
+
+.kpi-change.negative {
+    color: var(--danger);
+}
 
 /* ============================================
    Charts Section
@@ -527,11 +552,30 @@ body {
     text-transform: capitalize;
 }
 
-.status-badge.delivered { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.status-badge.shipped { background: rgba(59, 130, 246, 0.2); color: var(--info); }
-.status-badge.pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.status-badge.cancelled { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-.status-badge.confirmed { background: rgba(139, 92, 246, 0.2); color: var(--accent-secondary); }
+.status-badge.delivered {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.status-badge.shipped {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--info);
+}
+
+.status-badge.pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+}
+
+.status-badge.cancelled {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+.status-badge.confirmed {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--accent-secondary);
+}
 
 .stock-badge {
     padding: 4px 12px;
@@ -540,9 +584,20 @@ body {
     font-weight: 600;
 }
 
-.stock-badge.in-stock { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.stock-badge.low-stock { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.stock-badge.out-of-stock { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+.stock-badge.in-stock {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.stock-badge.low-stock {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+}
+
+.stock-badge.out-of-stock {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
 
 /* ============================================
    Page Headers
@@ -607,10 +662,85 @@ body {
    Analytics Grid
    ============================================ */
 
+/* ============================================
+   Analytics Grid (Ultra Compact Layout)
+   ============================================ */
+
 .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    /* Default to single row: Trend (wide) | DoW | Payment */
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.analytics-grid .chart-card {
+    margin-bottom: 0;
+    height: 100%;
+    /* Fill height */
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-grid .chart-body {
+    height: 220px;
+    /* Very compact height */
+    padding: 10px;
+    flex: 1;
+    position: relative;
+    width: 100%;
+}
+
+.analytics-grid .chart-card h3 {
+    padding: 12px 16px 4px;
+    margin-bottom: 0;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Reset full-width to fit the grid flow */
+.analytics-grid .chart-card.full-width {
+    grid-column: auto;
+}
+
+/* Specific adjustment for the trend chart to ensure it fits */
+.analytics-grid .chart-card.full-width .chart-body {
+    height: 220px;
+}
+
+/* Tablet/Laptop: Stack slightly (Trend on top, others below) */
+@media (max-width: 1200px) {
+    .analytics-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .analytics-grid .chart-card.full-width {
+        grid-column: span 2;
+    }
+}
+
+/* Mobile: Full stack */
+@media (max-width: 768px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analytics-grid .chart-card.full-width {
+        grid-column: span 1;
+    }
+}
+
+/* Desktop: Try to fit side-by-side if screen is wide enough */
+@media (min-width: 1600px) {
+    .analytics-grid {
+        grid-template-columns: 2fr 1fr 1fr;
+    }
+
+    .chart-card.full-width {
+        grid-column: span 1;
+    }
 }
 
 /* ============================================
@@ -664,15 +794,24 @@ body {
     animation: slideIn 0.3s ease;
 }
 
-.toast.success { border-color: var(--success); }
-.toast.error { border-color: var(--danger); }
-.toast.warning { border-color: var(--warning); }
+.toast.success {
+    border-color: var(--success);
+}
+
+.toast.error {
+    border-color: var(--danger);
+}
+
+.toast.warning {
+    border-color: var(--warning);
+}
 
 @keyframes slideIn {
     from {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -686,6 +825,58 @@ body {
 }
 
 /* ============================================
+   Glassmorphism & Advanced Cards
+   ============================================ */
+
+.glass-card {
+    background: rgba(30, 34, 45, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-card:hover {
+    background: rgba(42, 47, 61, 0.8);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-4px);
+}
+
+.metric-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+/* ============================================
+   Enhanced Charts & Layouts
+   ============================================ */
+
+.mt-4 {
+    margin-top: 32px;
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.chart-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: var(--text-primary);
+    padding: 24px 24px 0;
+}
+
+/* ============================================
    Responsive Design
    ============================================ */
 
@@ -693,11 +884,11 @@ body {
     .kpi-section {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .charts-section {
         grid-template-columns: 1fr;
     }
-    
+
     .chart-card.large {
         grid-column: span 1;
     }
@@ -707,19 +898,21 @@ body {
     .sidebar {
         width: 80px;
     }
-    
+
     .sidebar .nav-text,
     .sidebar .logo-text,
     .sidebar .status-text {
         display: none;
     }
-    
+
     .main-content {
         margin-left: 80px;
     }
-    
+
     .tables-section,
-    .charts-row {
+    .charts-row,
+    .customer-metrics,
+    .analytics-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -728,22 +921,22 @@ body {
     .sidebar {
         display: none;
     }
-    
+
     .main-content {
         margin-left: 0;
     }
-    
+
     .kpi-section {
         grid-template-columns: 1fr;
     }
-    
+
     .main-header {
         flex-direction: column;
         height: auto;
         padding: 16px;
         gap: 16px;
     }
-    
+
     .header-right {
         width: 100%;
         justify-content: space-between;
