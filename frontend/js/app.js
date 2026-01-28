@@ -251,12 +251,17 @@ class DashboardApp {
             // Render Metrics (Mocked for now, or fetch from separate endpoint)
             // Ideally backend provides summarized metrics
             const metrics = await api.getSegmentDistribution();
-            const vip = metrics.find(s => s.segment === 'VIP')?.count || 0;
-            const atRisk = metrics.find(s => s.segment === 'At Risk')?.count || 0;
+            const vip = metrics.find(s => s.segment === 'vip')?.count || 0;
+            const atRisk = metrics.find(s => s.segment === 'at_risk')?.count || 0;
 
             document.getElementById('vipCount').innerText = vip.toLocaleString();
             document.getElementById('atRiskCount').innerText = atRisk.toLocaleString();
-            // document.getElementById('avgLtv').innerText = formatCurrency(450); // Keep mock or fetching real
+
+            // Calculate weighted average LTV from all segments
+            const totalCustomers = metrics.reduce((sum, s) => sum + s.count, 0);
+            const totalLtvValue = metrics.reduce((sum, s) => sum + (s.avg_ltv * s.count), 0);
+            const avgLtv = totalCustomers > 0 ? totalLtvValue / totalCustomers : 0;
+            document.getElementById('avgLtv').innerText = formatCurrency(avgLtv);
 
             if (response.items.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="loading">No customers found</td></tr>';
@@ -284,7 +289,7 @@ class DashboardApp {
             this.renderPagination('customersPagination', response.page, response.pages, (p) => this.loadCustomers(p));
 
             // Render Cohort Chart (re-use existing logic)
-            createSegmentChart('cohortChart', segmentData);
+            createSegmentChart('cohortChart', metrics);
 
             // Mock LTV Chart Data
             const ltvData = {
