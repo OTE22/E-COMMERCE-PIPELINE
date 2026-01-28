@@ -12,6 +12,12 @@ A **production-grade, real-time analytics platform** for e-commerce businesses. 
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
 ![Tests](https://img.shields.io/badge/Tests-45%20Files%20Verified-brightgreen)
 
+## 🎬 Demo
+
+![E-Commerce Analytics Platform Demo](DEMO_AI_CLTV_ANALYZER.gif)
+
+*Real-time customer analytics dashboard featuring LTV calculation, churn prediction, and RFM segmentation*
+
 ---
 
 > [!IMPORTANT]

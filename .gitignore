@@ -175,3 +175,7 @@ node_modules/
 
 # Build artifacts
 *.whl
+
+# LinkedIn post files (personal content)
+LINKEDIN_POST.md
+LINKEDIN_POST_READY.txt
